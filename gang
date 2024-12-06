@@ -1,0 +1,358 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+[Serializable]
+public class Student
+{
+    public string FullName { get; set; }
+    public int Age { get; set; }
+    public int YearOfBirth { get; set; }
+    public string Group { get; set; }
+    public string Login { get; set; }
+    public string Password { get; set; }
+    public List<Grade> Grades { get; set; } = new List<Grade>();
+}
+
+[Serializable]
+public class Teacher
+{
+    public string FullName { get; set; }
+    public int YearOfBirth { get; set; }
+    public List<string> Disciplines { get; set; } = new List<string>();
+    public List<string> Groups { get; set; } = new List<string>();
+    public string Login { get; set; }
+    public string Password { get; set; }
+}
+
+[Serializable]
+public class Admin
+{
+    public string FullName { get; set; }
+    public string Login { get; set; }
+    public string Password { get; set; }
+}
+
+[Serializable]
+public class Grade
+{
+    public string Subject { get; set; }
+    public int Score { get; set; }
+    public DateTime Date { get; set; }
+}
+
+public static class PredefinedData
+{
+    public static List<Student> Students = new List<Student>
+    {
+        new Student
+        {
+            FullName = "Батаев Даниил",
+            Age = 17,
+            YearOfBirth = 2007,
+            Group = "Группа A",
+            Login = "student1",
+            Password = "password1",
+            Grades = new List<Grade>
+            {
+                new Grade { Subject = "Математика", Score = 5, Date = DateTime.Now },
+                new Grade { Subject = "Химия", Score = 4, Date = DateTime.Now }
+            }
+        }
+    };
+
+    public static List<Teacher> Teachers = new List<Teacher>
+    {
+        new Teacher
+        {
+            FullName = "Павел Дуров",
+            YearOfBirth = 1980,
+            Disciplines = new List<string> { "Математика", "Химия" },
+            Groups = new List<string> { "Группа A" },
+            Login = "teacher1",
+            Password = "password2"
+        }
+    };
+
+    public static Admin DefaultAdmin = new Admin
+    {
+        FullName = "Адмиин Админович",
+        Login = "admin",
+        Password = "adminpassword"
+    };
+}
+
+public class Authorization
+{
+    public static string Login()
+    {
+        Console.Write("Логин: ");
+        var login = Console.ReadLine();
+
+        Console.Write("Пароль: ");
+        var password = Console.ReadLine();
+
+        if (PredefinedData.Students.Any(s => s.Login == login && s.Password == password))
+        {
+            Console.WriteLine("Успешный вход как студент!");
+            return "Student";
+        }
+
+        if (PredefinedData.Teachers.Any(t => t.Login == login && t.Password == password))
+        {
+            Console.WriteLine("Успешный вход как преподаватель!");
+            return "Teacher";
+        }
+
+        if (PredefinedData.DefaultAdmin.Login == login && PredefinedData.DefaultAdmin.Password == password)
+        {
+            Console.WriteLine("Успешный вход как администратор!");
+            return "Admin";
+        }
+
+        Console.WriteLine("Неверный логин или пароль!");
+        return null;
+    }
+}
+
+public static class RoleManager
+{
+    public static void StudentActions()
+    {
+        var student = PredefinedData.Students.First();
+        Console.WriteLine($"Добро пожаловать, {student.FullName}!");
+        Console.WriteLine("Ваши оценки:");
+
+        foreach (var grade in student.Grades)
+        {
+            Console.WriteLine($"Предмет: {grade.Subject}, Оценка: {grade.Score}, Дата: {grade.Date.ToShortDateString()}");
+        }
+    }
+
+    public static void TeacherActions()
+    {
+        var teacher = PredefinedData.Teachers.First();
+        Console.WriteLine($"Добро пожаловать, {teacher.FullName}!");
+        Console.WriteLine("Ваши дисциплины:");
+
+        foreach (var discipline in teacher.Disciplines)
+        {
+            Console.WriteLine($"- {discipline}");
+        }
+
+        Console.WriteLine("Доступные группы:");
+        foreach (var group in teacher.Groups)
+        {
+            Console.WriteLine($"- {group}");
+        }
+
+        Console.WriteLine("Введите команду: ");
+        Console.WriteLine("1 - Изменить оценку");
+        Console.WriteLine("2 - Просмотреть журнал");
+        Console.WriteLine("0 - Выйти");
+        var command = Console.ReadLine();
+
+        if (command == "1")
+        {
+            Console.Write("Введите новый балл для предмета 'Математика': ");
+            var newScore = int.Parse(Console.ReadLine());
+            PredefinedData.Students.First().Grades[0].Score = newScore;
+            Console.WriteLine("Оценка обновлена!");
+        }
+        else if (command == "2")
+        {
+            ViewGradebook();
+        }
+    }
+
+    private static void ViewGradebook()
+    {
+        Console.WriteLine("Журнал студентов:");
+        var teacherGroups = PredefinedData.Teachers.First().Groups;
+
+        foreach (var student in PredefinedData.Students.Where(s => teacherGroups.Contains(s.Group)))
+        {
+            Console.WriteLine($"Студент: {student.FullName}, Группа: {student.Group}");
+            foreach (var grade in student.Grades)
+            {
+                Console.WriteLine($" - Предмет: {grade.Subject}, Оценка: {grade.Score}, Дата: {grade.Date.ToShortDateString()}");
+            }
+        }
+    }
+
+    public static void AdminActions()
+    {
+        var admin = PredefinedData.DefaultAdmin;
+        Console.WriteLine($"Добро пожаловать, {admin.FullName}!");
+        Console.WriteLine("Выберите действие:");
+        Console.WriteLine("1 - Просмотреть список студентов");
+        Console.WriteLine("2 - Просмотреть список преподавателей");
+        Console.WriteLine("3 - Изменить данные студента/преподавателя");
+        Console.WriteLine("4 - Удалить студента/преподавателя");
+        Console.WriteLine("5 - Добавить студента/преподавателя");
+        Console.WriteLine("0 - Выйти");
+
+        var command = Console.ReadLine();
+        switch (command)
+        {
+            case "1":
+                Console.WriteLine("Список студентов:");
+                foreach (var student in PredefinedData.Students)
+                {
+                    Console.WriteLine($"- {student.FullName}, Группа: {student.Group}");
+                }
+                break;
+
+            case "2":
+                Console.WriteLine("Список преподавателей:");
+                foreach (var teacher in PredefinedData.Teachers)
+                {
+                    Console.WriteLine($"- {teacher.FullName}, Дисциплины: {string.Join(", ", teacher.Disciplines)}");
+                }
+                break;
+
+            case "3":
+                Console.WriteLine("Введите 1 для изменения данных студента, 2 для изменения данных преподавателя:");
+                var editChoice = Console.ReadLine();
+                if (editChoice == "1")
+                {
+                    Console.Write("Введите имя студента для редактирования: ");
+                    var studentName = Console.ReadLine();
+                    var student = PredefinedData.Students.FirstOrDefault(s => s.FullName == studentName);
+                    if (student != null)
+                    {
+                        Console.Write("Введите новую группу студента: ");
+                        student.Group = Console.ReadLine();
+                        Console.WriteLine("Данные студента обновлены!");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Студент не найден.");
+                    }
+                }
+                else if (editChoice == "2")
+                {
+                    Console.Write("Введите имя преподавателя для редактирования: ");
+                    var teacherName = Console.ReadLine();
+                    var teacher = PredefinedData.Teachers.FirstOrDefault(t => t.FullName == teacherName);
+                    if (teacher != null)
+                    {
+                        Console.Write("Введите новые дисциплины (через запятую): ");
+                        teacher.Disciplines = new List<string>(Console.ReadLine().Split(','));
+                        Console.WriteLine("Данные преподавателя обновлены!");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Преподаватель не найден.");
+                    }
+                }
+                break;
+
+            case "4":
+                Console.WriteLine("Введите 1 для удаления студента, 2 для удаления преподавателя:");
+                var deleteChoice = Console.ReadLine();
+                if (deleteChoice == "1")
+                {
+                    Console.Write("Введите имя студента для удаления: ");
+                    var studentName = Console.ReadLine();
+                    var student = PredefinedData.Students.FirstOrDefault(s => s.FullName == studentName);
+                    if (student != null)
+                    {
+                        PredefinedData.Students.Remove(student);
+                        Console.WriteLine("Студент удален!");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Студент не найден.");
+                    }
+                }
+                else if (deleteChoice == "2")
+                {
+                    Console.Write("Введите имя преподавателя для удаления: ");
+                    var teacherName = Console.ReadLine();
+                    var teacher = PredefinedData.Teachers.FirstOrDefault(t => t.FullName == teacherName);
+                    if (teacher != null)
+                    {
+                        PredefinedData.Teachers.Remove(teacher);
+                        Console.WriteLine("Преподаватель удален!");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Преподаватель не найден.");
+                    }
+                }
+                break;
+
+            case "5":
+                Console.WriteLine("Введите 1 для добавления студента, 2 для добавления преподавателя:");
+                var addChoice = Console.ReadLine();
+                if (addChoice == "1")
+                {
+                    var newStudent = new Student();
+                    Console.Write("Введите имя студента: ");
+                    newStudent.FullName = Console.ReadLine();
+                    Console.Write("Введите возраст студента: ");
+                    newStudent.Age = int.Parse(Console.ReadLine());
+                    Console.Write("Введите группу студента: ");
+                    newStudent.Group = Console.ReadLine();
+                    Console.Write("Введите логин студента: ");
+                    newStudent.Login = Console.ReadLine();
+                    Console.Write("Введите пароль студента: ");
+                    newStudent.Password = Console.ReadLine();
+                    PredefinedData.Students.Add(newStudent);
+                    Console.WriteLine("Студент добавлен!");
+                }
+                else if (addChoice == "2")
+                {
+                    var newTeacher = new Teacher();
+                    Console.Write("Введите имя преподавателя: ");
+                    newTeacher.FullName = Console.ReadLine();
+                    Console.Write("Введите год рождения преподавателя: ");
+                    newTeacher.YearOfBirth = int.Parse(Console.ReadLine());
+                    Console.Write("Введите дисциплины преподавателя (через запятую): ");
+                    newTeacher.Disciplines = new List<string>(Console.ReadLine().Split(','));
+                    Console.Write("Введите логин преподавателя: ");
+                    newTeacher.Login = Console.ReadLine();
+                    Console.Write("Введите пароль преподавателя: ");
+                    newTeacher.Password = Console.ReadLine();
+                    PredefinedData.Teachers.Add(newTeacher);
+                    Console.WriteLine("Преподаватель добавлен!");
+                }
+                break;
+
+            case "0":
+                Console.WriteLine("Выход из системы.");
+                break;
+
+            default:
+                Console.WriteLine("Неверная команда.");
+                break;
+        }
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        Console.WriteLine("Добро пожаловать в систему!");
+        var role = Authorization.Login();
+
+        if (role == "Student")
+        {
+            RoleManager.StudentActions();
+        }
+        else if (role == "Teacher")
+        {
+            RoleManager.TeacherActions();
+        }
+        else if (role == "Admin")
+        {
+            RoleManager.AdminActions();
+        }
+        else
+        {
+            Console.WriteLine("Доступ запрещен.");
+        }
+    }
+}
